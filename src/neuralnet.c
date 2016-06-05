@@ -38,6 +38,7 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 	char inputLayerNeuronNum[5];
  	char hiddenLayerNeuronNum[5];
      	char outputLayerNeuronNum[5];
+	char cycle[5];
 	
 	//parse the network definition file	
 	if(FileToStr(xml, srcFile, &size) == -1)
@@ -49,11 +50,13 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 	InnerText(outputLayerNeuronNum, xml, "<OutputLayerNeuronNum>", "</OutputLayerNeuronNum>");
 	netDefinition->activationFunction = (char *)malloc(sizeof(char)*20);
 	InnerText(netDefinition->activationFunction, xml, "<ActivationFunction>", "</ActivationFunction>");
+	InnerText(cycle, xml, "<ValidationCycle>", "</ValidationCycle>");
 	netDefinition->learningRate = atof(learningRate);
 	netDefinition->epoch = atoi(epoch);
 	netDefinition->inputLayerNeuronNum = atoi(inputLayerNeuronNum);
 	netDefinition->hiddenLayerNeuronNum = atoi(hiddenLayerNeuronNum);
 	netDefinition->outputLayerNeuronNum = atoi(outputLayerNeuronNum);
+	netDefinition->validationCycle = atoi(cycle);
 	
 	return 0; 
 }
@@ -165,13 +168,13 @@ int Training()
 	for(i = 0; i < netDefinition.inputLayerNeuronNum; ++i){
 		i2hWeights[i] = (double*)malloc(sizeof(double)*netDefinition.hiddenLayerNeuronNum);
 		for(j = 0; j < netDefinition.hiddenLayerNeuronNum; ++j)
-			i2hWeights[i][j] = (rand()%5)+1;
+			i2hWeights[i][j] = ((rand()%5)+1) * 0.1;
 	}
 	h2oWeights = (double**)malloc(sizeof(double*)*netDefinition.hiddenLayerNeuronNum);
 	for(i = 0; i < netDefinition.hiddenLayerNeuronNum; ++i){
 		h2oWeights[i] = (double*)malloc(sizeof(double)*netDefinition.outputLayerNeuronNum);
 		for(j = 0; j < netDefinition.outputLayerNeuronNum; ++j)
-			h2oWeights[i][j] = (rand()%5)+1;
+			h2oWeights[i][j] = ((rand()%5)+1) * 0.1;
 	}
 	//memory allocation for bias
 	bias = (double**)malloc(sizeof(double*));
@@ -179,12 +182,11 @@ int Training()
 		for(j = 0; j < netDefinition.outputLayerNeuronNum; ++j)
 			bias[0][j] = 0;
 
-	//print weights
+	//weigths
 	PrintMatrix(i2hWeights,netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
 	PrintMatrix(h2oWeights,netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);	
-	int epoch = netDefinition.epoch;
-	for(i = 0; i < epoch; ++i){
-		if((i % 100) == 0)	
+	for(i = 0; i < netDefinition.epoch; ++i){
+		if((i % netDefinition.validationCycle) == 0)	
 			EvaluateAccuracy(validationSet, &netDefinition, i2hWeights, h2oWeights, bias);
 		entityPtr = trainingSet;
 		while(entityPtr != NULL){
@@ -192,7 +194,6 @@ int Training()
 			entityPtr = entityPtr->pNext;
 		}
 	}
-	
 	//weigths
 	PrintMatrix(i2hWeights,netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
 	PrintMatrix(h2oWeights,netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);	
@@ -245,6 +246,7 @@ int BackPropagation(double **output, double **hidden, double **input, double **i
 {	
 	double *errorO = (double *)malloc(sizeof(double)*netDef->outputLayerNeuronNum);
 	double *errorH = (double *)malloc(sizeof(double)*netDef->hiddenLayerNeuronNum);
+	
 	//calculate error between output layer and hidden layer
 	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){
 		errorO[i] = output[0][i] * (1 - output[0][i]) * ((entity->catagory)[i]-output[0][i]);
@@ -255,6 +257,7 @@ int BackPropagation(double **output, double **hidden, double **input, double **i
 		}
 	}
 	for(int i = 0; i < netDef->hiddenLayerNeuronNum; ++i){
+		errorH[i] = 0;
 		for(int j = 0; j < netDef->outputLayerNeuronNum; ++j){
 			errorH[i] += (h2oWeights[i][j] * errorO[j]);
 		}

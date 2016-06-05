@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="BIG5"?>
 <NetDefine>
+<<<<<<< HEAD
+	<LearningRate>0.1</LearningRate>
+	<Epoch>10000</Epoch>
+	<Weight>Random</Weight>
+	<InputLayerNeuronNum>4</InputLayerNeuronNum>
+	<HiddenLayerNeuronNum>2</HiddenLayerNeuronNum>
+	<OutputLayerNeuronNum>3</OutputLayerNeuronNum>
+	<ActivationFunction>Sigmoid</ActivationFunction>
+</NetDefine>
+<TrainDefine>
+	<ValidationCycle>1000</ValidationCycle>
+=======
 	<LearningRate>0.3</LearningRate>
 	<Epoch>1000</Epoch>
 	<Weight>Random</Weight>
@@ -10,4 +22,5 @@
 </NetDefine>
 <TrainDefine>
 	<ValidationCycle>100</ValidationCycle>
+>>>>>>> 46a750f05f3aef1b335140edadd1e1db54a6ba16
 <TrainDefine>
