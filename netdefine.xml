@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="BIG5"?>
+<NetDefine>
+	<LearningRate>0.3</LearningRate>
+	<Epoch>1000</Epoch>
+	<Weight>Random</Weight>
+	<InputLayerNeuronNum>6</InputLayerNeuronNum>
+	<HiddenLayerNeuronNum>5</HiddenLayerNeuronNum>
+	<OutputLayerNeuronNum>4</OutputLayerNeuronNum>
+	<ActivationFunction>Sigmoid</ActivationFunction>
+</NetDefine>
+<TrainDefine>
+	<ValidationCycle>100</ValidationCycle>
+<TrainDefine>
