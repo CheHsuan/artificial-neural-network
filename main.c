@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 	printf("\tHidden Layer Neuron Number: %d\n", netDefinition.hiddenLayerNeuronNum);
 	printf("\tOutput Layer Neuron Number: %d\n", netDefinition.outputLayerNeuronNum);
 	printf("\tActivation Function: %s\n", netDefinition.activationFunction);
+	printf("\tWeight Assignment Method: %s\n", netDefinition.weightAssignment);
 	LoadTrainingSet(argv[2]);
 	LoadValidationSet(argv[3]);
 

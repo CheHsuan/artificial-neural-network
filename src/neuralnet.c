@@ -50,6 +50,8 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 	InnerText(outputLayerNeuronNum, xml, "<OutputLayerNeuronNum>", "</OutputLayerNeuronNum>");
 	netDefinition->activationFunction = (char *)malloc(sizeof(char)*20);
 	InnerText(netDefinition->activationFunction, xml, "<ActivationFunction>", "</ActivationFunction>");
+	netDefinition->weightAssignment = (char *)malloc(sizeof(char)*20);
+	InnerText(netDefinition->weightAssignment, xml, "<WeightAssignment>", "</WeightAssignment>");
 	InnerText(cycle, xml, "<ValidationCycle>", "</ValidationCycle>");
 	netDefinition->learningRate = atof(learningRate);
 	netDefinition->epoch = atoi(epoch);
@@ -161,20 +163,25 @@ ENTITY *Add2List(char *buffer, const NET_DEFINE *netDef, ENTITY *entityListTail)
 int Training()
 {
 	int i,j;
+	double base = 0.1;
 	ENTITY *entityPtr = NULL;
- 	srand(time(NULL));
+	srand(time(NULL));
+
+	if(strcmp(netDefinition.weightAssignment, "Zero") == 0)
+		base = 0;	
+
 	//memory allocation for weights between layers
 	i2hWeights = (double**)malloc(sizeof(double*)*netDefinition.inputLayerNeuronNum);
 	for(i = 0; i < netDefinition.inputLayerNeuronNum; ++i){
 		i2hWeights[i] = (double*)malloc(sizeof(double)*netDefinition.hiddenLayerNeuronNum);
 		for(j = 0; j < netDefinition.hiddenLayerNeuronNum; ++j)
-			i2hWeights[i][j] = ((rand()%5)+1) * 0.1;
+			i2hWeights[i][j] = ((rand() % 5) + 1) * base;
 	}
 	h2oWeights = (double**)malloc(sizeof(double*)*netDefinition.hiddenLayerNeuronNum);
 	for(i = 0; i < netDefinition.hiddenLayerNeuronNum; ++i){
 		h2oWeights[i] = (double*)malloc(sizeof(double)*netDefinition.outputLayerNeuronNum);
 		for(j = 0; j < netDefinition.outputLayerNeuronNum; ++j)
-			h2oWeights[i][j] = ((rand()%5)+1) * 0.1;
+			h2oWeights[i][j] = ((rand() % 5) + 1) * base;
 	}
 	//memory allocation for bias
 	bias = (double**)malloc(sizeof(double*));
@@ -213,7 +220,7 @@ double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i
 	inputLayer = (double**)malloc(sizeof(double*)*1);
 	for(int i = 0; i < 1; ++i){
 		inputLayer[i] = (double*)malloc(sizeof(double)*netDef->inputLayerNeuronNum);
-		for(int j = 0; j < netDef->inputLayerNeuronNum; ++j)
+	 	for(int j = 0; j < netDef->inputLayerNeuronNum; ++j)
 			inputLayer[i][j] = *((entity->attributes)+j);
 	}
 
@@ -230,6 +237,8 @@ double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i
 	AssignDimension(dimension, 1, netDef->hiddenLayerNeuronNum, netDef->outputLayerNeuronNum);
 	outputLayer = M_Multiply(hiddenLayer, h2oWeights, dimension);
 	outputLayer = activation(outputLayer, netDef->outputLayerNeuronNum);
+	outputLayer = Softmax(outputLayer, netDef->outputLayerNeuronNum);
+
 	//add bias
 	outputLayer = M_Add(outputLayer, bias, 1, netDef->outputLayerNeuronNum);
 	
@@ -278,14 +287,21 @@ int EvaluateAccuracy(ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights
 {
 	int total = 0;
 	int count = 0;
+	static int cycle = 0;
 	ENTITY *entityPtr = entity;
+	time_t timep; 
+	struct tm *p; 
+	time(&timep); 
+	p = localtime(&timep); 
+	printf("[%d] %d:%d:%d\t", cycle, p->tm_hour, p->tm_min, p->tm_sec);
 	while(entityPtr != NULL){
 		if(Validation(entityPtr, netDef, i2hWeights, h2oWeights, bias) == 1)
 			++count;
 		entityPtr = entityPtr->pNext;
 		++total;
 	}
-	printf("Accuracy : %d\n",((count*100)/total));
+	printf("Accuracy : %0.2f\n",((count*100)/total) * 0.01);
+	cycle += netDef->validationCycle;
 	return 0;
 } 
 
@@ -325,10 +341,11 @@ int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights
 	outputLayer = Softmax(outputLayer, netDef->outputLayerNeuronNum);
 
 	int maxIndex = -1;
-	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i)
+	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){
+		
 		if(outputLayer[i] > outputLayer[maxIndex])
 			maxIndex = i;
-
+	}
 	Free2DMemory(inputLayer,1);
 	Free2DMemory(hiddenLayer,1);
 	Free2DMemory(outputLayer,1);
@@ -361,7 +378,7 @@ double **Sigmoid(double **a, int column)
 
 double **Softmax(double **a, int column)
 {
-	double denominator = 0;
+	double denominator = 1;
 	for(int i = 0; i < column; ++i){
 		denominator += exp(a[0][i]);
 	}

@@ -14,6 +14,7 @@ typedef struct NET_DEFINE{
 	int hiddenLayerNeuronNum;
 	int outputLayerNeuronNum;
 	char *activationFunction;
+	char *weightAssignment;
 	int validationCycle;	
 }NET_DEFINE;
 
