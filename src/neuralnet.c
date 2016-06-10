@@ -350,16 +350,16 @@ int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights
 	outputLayer = M_Multiply(hiddenLayer, h2oWeights, dimension);
 	outputLayer = M_Add(outputLayer, h2oBias, 1, netDef->outputLayerNeuronNum);
 	outputLayer = activation(outputLayer, netDef->outputLayerNeuronNum);
-
+	//PrintMatrix(outputLayer, 1, netDef->outputLayerNeuronNum);
 	//calculate mean square error
 	*meanSquareError = MeanSquareError(entity, outputLayer, netDef->outputLayerNeuronNum);
 
 	//softmax
 	outputLayer = Softmax(outputLayer, netDef->outputLayerNeuronNum);
-	int maxIndex = -1;
-	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){
-		
-		if(outputLayer[i] > outputLayer[maxIndex])
+	
+	int maxIndex = 0;
+	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){	
+		if(outputLayer[0][i] > outputLayer[0][maxIndex])
 			maxIndex = i;
 	}
 	Free2DMemory(inputLayer,1);
@@ -394,7 +394,7 @@ double **Sigmoid(double **a, int column)
 
 double **Softmax(double **a, int column)
 {
-	double denominator = 1;
+	double denominator = 0;
 	for(int i = 0; i < column; ++i){
 		denominator += exp(a[0][i]);
 	}
