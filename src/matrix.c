@@ -1,4 +1,6 @@
 #include "matrix.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 double **M_Multiply(double **a, double **b, int *dimension)
 {

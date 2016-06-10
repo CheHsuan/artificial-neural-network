@@ -1,3 +1,11 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <math.h>
+#include <time.h>
+#include "xmlparser.h"
+#include "matrix.h"
 #include "neuralnet.h"
 
 NET_DEFINE netDefinition;
@@ -6,7 +14,8 @@ ENTITY *validationSet = NULL;
 ENTITY *testingSet = NULL;
 double **i2hWeights = NULL;
 double **h2oWeights = NULL;
-double **bias = NULL;
+double **i2hBias = NULL;
+double **h2oBias = NULL;
 
 static void PrintMatrix(double **matrix, int row, int column)
 {
@@ -184,20 +193,24 @@ int Training()
 			h2oWeights[i][j] = ((rand() % 5) + 1) * base;
 	}
 	//memory allocation for bias
-	bias = (double**)malloc(sizeof(double*));
-	bias[0] = (double*)malloc(sizeof(double)*netDefinition.outputLayerNeuronNum);
+	i2hBias = (double**)malloc(sizeof(double*));
+	i2hBias[0] = (double*)malloc(sizeof(double)*netDefinition.hiddenLayerNeuronNum);
+		for(j = 0; j < netDefinition.hiddenLayerNeuronNum; ++j)
+			i2hBias[0][j] = 1;
+	h2oBias = (double**)malloc(sizeof(double*));
+	h2oBias[0] = (double*)malloc(sizeof(double)*netDefinition.outputLayerNeuronNum);
 		for(j = 0; j < netDefinition.outputLayerNeuronNum; ++j)
-			bias[0][j] = 0;
-
+			h2oBias[0][j] = 1;
+	
 	//weigths
 	PrintMatrix(i2hWeights,netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
 	PrintMatrix(h2oWeights,netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);	
 	for(i = 0; i < netDefinition.epoch; ++i){
 		if((i % netDefinition.validationCycle) == 0)	
-			EvaluateAccuracy(validationSet, &netDefinition, i2hWeights, h2oWeights, bias);
+			EvaluateAccuracy(validationSet, &netDefinition, i2hWeights, h2oWeights, i2hBias, h2oBias);
 		entityPtr = trainingSet;
 		while(entityPtr != NULL){
-			FeedForwarding(entityPtr, &netDefinition, i2hWeights, h2oWeights, bias);
+			FeedForwarding(entityPtr, &netDefinition, i2hWeights, h2oWeights, i2hBias, h2oBias);
 			entityPtr = entityPtr->pNext;
 		}
 	}
@@ -208,7 +221,7 @@ int Training()
 	return 0;
 }
 
-double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **bias)
+double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **i2oBias, double **h2oBias)
 {
 	double **inputLayer;
 	int dimension[3];
@@ -230,17 +243,16 @@ double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i
 	else
 		activation = Relu;
 
-	//matrix operation
+	//matrix operation (i 2 h)
 	AssignDimension(dimension, 1, netDef->inputLayerNeuronNum, netDef->hiddenLayerNeuronNum);
 	hiddenLayer = M_Multiply(inputLayer, i2hWeights, dimension);
+	hiddenLayer = M_Add(hiddenLayer, i2hBias, 1, netDef->hiddenLayerNeuronNum);
 	hiddenLayer = activation(hiddenLayer, netDef->hiddenLayerNeuronNum);
+	//matrix operation (h 2 o)
 	AssignDimension(dimension, 1, netDef->hiddenLayerNeuronNum, netDef->outputLayerNeuronNum);
 	outputLayer = M_Multiply(hiddenLayer, h2oWeights, dimension);
+	outputLayer = M_Add(outputLayer, h2oBias, 1, netDef->outputLayerNeuronNum);
 	outputLayer = activation(outputLayer, netDef->outputLayerNeuronNum);
-	outputLayer = Softmax(outputLayer, netDef->outputLayerNeuronNum);
-
-	//add bias
-	outputLayer = M_Add(outputLayer, bias, 1, netDef->outputLayerNeuronNum);
 	
 	BackPropagation(outputLayer, hiddenLayer, inputLayer, i2hWeights, h2oWeights, entity, netDef);
 
@@ -259,7 +271,7 @@ int BackPropagation(double **output, double **hidden, double **input, double **i
 	//calculate error between output layer and hidden layer
 	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){
 		errorO[i] = output[0][i] * (1 - output[0][i]) * ((entity->catagory)[i]-output[0][i]);
-	}	
+	}
 	for(int i = 0; i < netDef->hiddenLayerNeuronNum; ++i){
 		for(int j = 0; j < netDef->outputLayerNeuronNum; ++j){
 			h2oWeights[i][j] += (netDef->learningRate * hidden[0][i] * errorO[j]);
@@ -277,35 +289,36 @@ int BackPropagation(double **output, double **hidden, double **input, double **i
 			i2hWeights[i][j] += (netDef->learningRate * input[0][i] * errorH[j]);
 		}
 	}
-	
 	free(errorO);
 	free(errorH);
 	return 0;
 }
 
-int EvaluateAccuracy(ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **bias)
+int EvaluateAccuracy(ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **i2hBias, double **h2oBias)
 {
 	int total = 0;
 	int count = 0;
 	static int cycle = 0;
 	ENTITY *entityPtr = entity;
+	double meanSquareError;
 	time_t timep; 
 	struct tm *p; 
 	time(&timep); 
 	p = localtime(&timep); 
 	printf("[%d] %d:%d:%d\t", cycle, p->tm_hour, p->tm_min, p->tm_sec);
 	while(entityPtr != NULL){
-		if(Validation(entityPtr, netDef, i2hWeights, h2oWeights, bias) == 1)
+		if(Validation(entityPtr, netDef, i2hWeights, h2oWeights, i2hBias, h2oBias, &meanSquareError) == 1)
 			++count;
 		entityPtr = entityPtr->pNext;
 		++total;
 	}
-	printf("Accuracy : %0.2f\n",((count*100)/total) * 0.01);
+	printf("Accuracy : %0.2f\t",((count*100)/total) * 0.01);
+	printf("Loss : %lf\n", meanSquareError);
 	cycle += netDef->validationCycle;
 	return 0;
 } 
 
-int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **bias)
+int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **i2hBias, double **h2oBias, double *meanSquareError)
 {
 	double **inputLayer;
 	int dimension[3];
@@ -331,15 +344,18 @@ int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights
 	//matrix operation
 	AssignDimension(dimension, 1, netDef->inputLayerNeuronNum, netDef->hiddenLayerNeuronNum);
 	hiddenLayer = M_Multiply(inputLayer, i2hWeights, dimension);
+	hiddenLayer = M_Add(hiddenLayer, i2hBias, 1, netDef->hiddenLayerNeuronNum);
 	hiddenLayer = activation(hiddenLayer, netDef->hiddenLayerNeuronNum);
 	AssignDimension(dimension, 1, netDef->hiddenLayerNeuronNum, netDef->outputLayerNeuronNum);
 	outputLayer = M_Multiply(hiddenLayer, h2oWeights, dimension);
+	outputLayer = M_Add(outputLayer, h2oBias, 1, netDef->outputLayerNeuronNum);
 	outputLayer = activation(outputLayer, netDef->outputLayerNeuronNum);
-	//add bias
-	outputLayer = M_Add(outputLayer, bias, 1, netDef->outputLayerNeuronNum);
+
+	//calculate mean square error
+	*meanSquareError = MeanSquareError(entity, outputLayer, netDef->outputLayerNeuronNum);
+
 	//softmax
 	outputLayer = Softmax(outputLayer, netDef->outputLayerNeuronNum);
-
 	int maxIndex = -1;
 	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){
 		
@@ -386,6 +402,15 @@ double **Softmax(double **a, int column)
 		a[0][i] = exp(a[0][i]) / denominator;
 	}	
 	return a;
+}
+
+double MeanSquareError(const ENTITY *entity, double **output, int column)
+{
+	double mse = 0;
+	for(int i = 0; i < column; ++i){
+		mse += (((entity->catagory)[i]-output[0][i]) * ((entity->catagory)[i]-output[0][i]));
+	}
+	return 0.5*mse;
 }
 
 void Free2DMemory(double **matrix, int row)
