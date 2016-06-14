@@ -35,7 +35,7 @@ int LoadNetDefinition(char *srcFile)
 		return 0;
 	}
 	printf("Error in reading the file (%s)!\n",srcFile);
-	return -1;
+	exit(0);
 }
 
 int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
@@ -52,16 +52,42 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 	//parse the network definition file	
 	if(FileToStr(xml, srcFile, &size) == -1)
 		return -1;
-	InnerText(learningRate, xml, "<LearningRate>", "</LearningRate>");
-	InnerText(epoch, xml, "<Epoch>", "</Epoch>");
-	InnerText(inputLayerNeuronNum, xml, "<InputLayerNeuronNum>", "</InputLayerNeuronNum>");
-	InnerText(hiddenLayerNeuronNum, xml, "<HiddenLayerNeuronNum>", "</HiddenLayerNeuronNum>");
-	InnerText(outputLayerNeuronNum, xml, "<OutputLayerNeuronNum>", "</OutputLayerNeuronNum>");
+	if(InnerText(learningRate, xml, "<LearningRate>", "</LearningRate>") == NULL){
+		printf("The xml file doesn't contain the <LearningRate> or </LearningRate> label.");
+		return -1;
+	}
+	if(InnerText(epoch, xml, "<Epoch>", "</Epoch>") == NULL){
+		printf("The xml file doesn't contain the <Epoch> or </Epoch> label.");
+		return -1;
+	}
+	if(InnerText(inputLayerNeuronNum, xml, "<InputLayerNeuronNum>", "</InputLayerNeuronNum>") == NULL){
+		printf("The xml file doesn't contain the <> or </> label.");
+		return -1;
+	}
+	if(InnerText(hiddenLayerNeuronNum, xml, "<HiddenLayerNeuronNum>", "</HiddenLayerNeuronNum>") == NULL){
+		printf("The xml file doesn't contain the <> or </> label.");
+		return -1;
+	}
+	if(InnerText(outputLayerNeuronNum, xml, "<OutputLayerNeuronNum>", "</OutputLayerNeuronNum>") == NULL){
+		printf("The xml file doesn't contain the <> or </> label.");
+		return -1;
+	}
 	netDefinition->activationFunction = (char *)malloc(sizeof(char)*20);
-	InnerText(netDefinition->activationFunction, xml, "<ActivationFunction>", "</ActivationFunction>");
+	if(InnerText(netDefinition->activationFunction, xml, "<ActivationFunction>", "</ActivationFunction>") == NULL){
+		printf("The xml file doesn't contain the <> or </> label.");
+		free(netDefinition->activationFunction);
+		return -1;
+	}
 	netDefinition->weightAssignment = (char *)malloc(sizeof(char)*20);
-	InnerText(netDefinition->weightAssignment, xml, "<WeightAssignment>", "</WeightAssignment>");
-	InnerText(cycle, xml, "<ValidationCycle>", "</ValidationCycle>");
+	if(InnerText(netDefinition->weightAssignment, xml, "<WeightAssignment>", "</WeightAssignment>") == NULL){
+		printf("The xml file doesn't contain the <> or </> label.");
+		free(netDefinition->weightAssignment);
+		return -1;
+	}
+	if(InnerText(cycle, xml, "<ValidationCycle>", "</ValidationCycle>") == NULL){
+		printf("The xml file doesn't contain the <> or </> label.");
+		return -1;
+	}
 	netDefinition->learningRate = atof(learningRate);
 	netDefinition->epoch = atoi(epoch);
 	netDefinition->inputLayerNeuronNum = atoi(inputLayerNeuronNum);
@@ -80,7 +106,7 @@ int LoadTrainingSet(char *srcFile)
 		return 0;
 	}
 	printf("Error in reading the file (%s)!\n",srcFile);
-	return -1;
+	exit(0);
 }
 
 int LoadValidationSet(char *srcFile)
@@ -91,7 +117,7 @@ int LoadValidationSet(char *srcFile)
 		return 0;
 	}
 	printf("Error in reading the file (%s)!\n",srcFile);
-	return -1;
+	exit(0);
 }
 
 int LoadTestingSet(char *srcFile)
@@ -102,7 +128,7 @@ int LoadTestingSet(char *srcFile)
 		return 0;
 	}
 	printf("Error in reading the file (%s)!\n",srcFile);
-	return -1;
+	exit(0);
 }
 
 ENTITY *ReadDataSet(ENTITY *dataSet,const NET_DEFINE *netDef, char *srcFile)
@@ -277,6 +303,7 @@ int BackPropagation(double **output, double **hidden, double **input, double **i
 			h2oWeights[i][j] += (netDef->learningRate * hidden[0][i] * errorO[j]);
 		}
 	}
+	//calculate error between hidden layer and output layer
 	for(int i = 0; i < netDef->hiddenLayerNeuronNum; ++i){
 		errorH[i] = 0;
 		for(int j = 0; j < netDef->outputLayerNeuronNum; ++j){
@@ -350,7 +377,7 @@ int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights
 	outputLayer = M_Multiply(hiddenLayer, h2oWeights, dimension);
 	outputLayer = M_Add(outputLayer, h2oBias, 1, netDef->outputLayerNeuronNum);
 	outputLayer = activation(outputLayer, netDef->outputLayerNeuronNum);
-	//PrintMatrix(outputLayer, 1, netDef->outputLayerNeuronNum);
+	
 	//calculate mean square error
 	*meanSquareError = MeanSquareError(entity, outputLayer, netDef->outputLayerNeuronNum);
 
