@@ -6,7 +6,7 @@ EXEC = model
 
 all: $(EXEC)
 
-$(EXEC): ./src/matrix.c ./src/neuralnet.c ./src/xmlparser.c main.c
+$(EXEC): ./src/matrix.c ./src/neuralnet.c ./src/xmlparser.c ./src/dataprocessing.c main.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:

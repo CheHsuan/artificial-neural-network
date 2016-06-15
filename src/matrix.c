@@ -14,9 +14,7 @@ double **M_Multiply(double **a, double **b, int *dimension)
 			for(int k = 0; k < dimension[1]; ++k){
 				c[i][j] = c[i][j] + a[i][k] * b[k][j];	
 			}
-//			printf("%lf ", c[i][j]);
 		}
-//		printf("\n");	
 	}	
 	return c;
 }
@@ -26,9 +24,17 @@ double **M_Add(double **a, double **b, int row, int column)
 	for(int i = 0; i < row; ++i){
 		for(int j = 0; j < column; ++j){
 			a[i][j] = a[i][j] + b[i][j];
-//			printf("%lf ", a[i][j]);
 		}
-//		printf("\n");
 	}	
 	return a;
+}
+
+void PrintMatrix(double **matrix, int row, int column)
+{
+	for(int i = 0; i < row; ++i){
+		for(int j = 0; j < column; ++j){
+			printf("%lf ", matrix[i][j]);
+		}
+		printf("\n");
+	}	
 }
