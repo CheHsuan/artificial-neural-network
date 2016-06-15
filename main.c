@@ -16,7 +16,8 @@ int main(int argc, char *argv[])
 	printf("\tWeight Assignment Method: %s\n", netDefinition.weightAssignment);
 	LoadTrainingSet(argv[2]);
 	LoadValidationSet(argv[3]);
-
 	Training();
+	FreeMemory();
+	
 	return 0;
 }

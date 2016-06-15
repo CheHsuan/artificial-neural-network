@@ -33,3 +33,5 @@ int EvaluateAccuracy(ENTITY *,const NET_DEFINE *,double **,double **, double **,
 int Validation(const ENTITY *,const NET_DEFINE *,double **,double **, double **, double **, double *);
 double MeanSquareError(const ENTITY *, double **, int);
 void Free2DMemory(double **, int);
+void FreeDataList(ENTITY *);
+void FreeMemory();

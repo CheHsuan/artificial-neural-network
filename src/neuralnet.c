@@ -61,31 +61,31 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 		return -1;
 	}
 	if(InnerText(inputLayerNeuronNum, xml, "<InputLayerNeuronNum>", "</InputLayerNeuronNum>") == NULL){
-		printf("The xml file doesn't contain the <> or </> label.");
+		printf("The xml file doesn't contain the <InputLayerNeuronNum> or </InputLayerNeuronNum> label.");
 		return -1;
 	}
 	if(InnerText(hiddenLayerNeuronNum, xml, "<HiddenLayerNeuronNum>", "</HiddenLayerNeuronNum>") == NULL){
-		printf("The xml file doesn't contain the <> or </> label.");
+		printf("The xml file doesn't contain the <HiddenLayerNeuronNum> or </HiddenLayerNeuronNum> label.");
 		return -1;
 	}
 	if(InnerText(outputLayerNeuronNum, xml, "<OutputLayerNeuronNum>", "</OutputLayerNeuronNum>") == NULL){
-		printf("The xml file doesn't contain the <> or </> label.");
+		printf("The xml file doesn't contain the <OutputLayerNeuronNum> or </OutputLayerNeuronNum> label.");
 		return -1;
 	}
 	netDefinition->activationFunction = (char *)malloc(sizeof(char)*20);
 	if(InnerText(netDefinition->activationFunction, xml, "<ActivationFunction>", "</ActivationFunction>") == NULL){
-		printf("The xml file doesn't contain the <> or </> label.");
+		printf("The xml file doesn't contain the <ActivationFunction> or </ActivationFunction> label.");
 		free(netDefinition->activationFunction);
 		return -1;
 	}
 	netDefinition->weightAssignment = (char *)malloc(sizeof(char)*20);
 	if(InnerText(netDefinition->weightAssignment, xml, "<WeightAssignment>", "</WeightAssignment>") == NULL){
-		printf("The xml file doesn't contain the <> or </> label.");
+		printf("The xml file doesn't contain the <WeightAssignment> or </WeightAssignment> label.");
 		free(netDefinition->weightAssignment);
 		return -1;
 	}
 	if(InnerText(cycle, xml, "<ValidationCycle>", "</ValidationCycle>") == NULL){
-		printf("The xml file doesn't contain the <> or </> label.");
+		printf("The xml file doesn't contain the <ValidationCycle> or </ValidationCycle> label.");
 		return -1;
 	}
 	netDefinition->learningRate = atof(learningRate);
@@ -446,4 +446,34 @@ void Free2DMemory(double **matrix, int row)
 		free(matrix[i]);		
 	}	
 	free(matrix);
+}
+
+void FreeDataList(ENTITY *ptr)
+{
+	ENTITY *tmp;
+	while(ptr != NULL){
+		tmp = ptr;
+		free(ptr->attributes);
+		free(ptr->catagory);
+		ptr = ptr->pNext;
+		free(tmp);
+	}
+}
+
+void FreeMemory()
+{
+	//free weights and bias
+	Free2DMemory(i2hWeights, netDefinition.inputLayerNeuronNum);
+	Free2DMemory(h2oWeights, netDefinition.hiddenLayerNeuronNum);
+	Free2DMemory(i2hBias, 1);
+	Free2DMemory(h2oBias, 1);
+	
+	//free training data set, validation data set and testing data set
+	FreeDataList(trainingSet);
+	FreeDataList(validationSet);
+	FreeDataList(testingSet);
+
+	//free memory in netDefinition
+	free(netDefinition.activationFunction);
+	free(netDefinition.weightAssignment);
 }
