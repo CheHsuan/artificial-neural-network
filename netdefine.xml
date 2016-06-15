@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="BIG5"?>
 <TrainDefine>
 	<LearningRate>0.1</LearningRate>
-	<Epoch>1000</Epoch>
+	<Epoch>10000</Epoch>
 	<WeightAssignment>Random</WeightAssignment>
 	<InputLayerNeuronNum>4</InputLayerNeuronNum>
-	<HiddenLayerNeuronNum>2</HiddenLayerNeuronNum>
-	<OutputLayerNeuronNum>2</OutputLayerNeuronNum>
+	<HiddenLayerNeuronNum>5</HiddenLayerNeuronNum>
+	<OutputLayerNeuronNum>3</OutputLayerNeuronNum>
 	<ActivationFunction>Sigmoid</ActivationFunction>
 </NetDefine>
 <TrainDefine>
-	<ValidationCycle>100</ValidationCycle>
+	<ValidationCycle>1000</ValidationCycle>
 </TrainDefine>
