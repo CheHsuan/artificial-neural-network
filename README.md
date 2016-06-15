@@ -5,12 +5,12 @@ It's a framework of 3-hidden layer artificial neural network. Users can define t
 # Usage
 ## How to compile
 make 
-## Excute
+## Execute
 ./model xxx.xml xxx.txt xxx.txt
 
 The first first file is an xml file which defines the nerual network architecture containing the neurons number in each layers, the learming rate, epoch time, activation function, etc.
 
-The second argument indicates the path of training set and the third argument is the path of validation set. The format in data set should be expressed like the following example.
+The second argument indicates the path of training set and the third argument is the path of validation set. The format in data set should be expressed like the following examples.
 
 *desired_output*&nbsp;&nbsp;&nbsp;&nbsp;*attribute_1*&nbsp;&nbsp;&nbsp;&nbsp;*attribute_2*&nbsp;&nbsp;&nbsp;&nbsp;*attribute_3*&nbsp;&nbsp;&nbsp;&nbsp;*...*&nbsp;&nbsp;&nbsp;&nbsp;*attribute_N*  
 1&nbsp;&nbsp;&nbsp;&nbsp;0.1&nbsp;&nbsp;&nbsp;&nbsp;0.25&nbsp;&nbsp;&nbsp;&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;1.89  
