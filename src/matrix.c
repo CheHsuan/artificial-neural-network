@@ -2,21 +2,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-double **M_Multiply(double **a, double **b, int *dimension)
+double **M_Multiply(double **a, double **b, int x, int y, int z)
 {
-	double **c = (double **)malloc(sizeof(double *)*dimension[0]);
-	for(int i = 0; i < dimension[0]; ++i)
-		c[i] = (double *)malloc(sizeof(double)*dimension[2]);
+	double **c = (double **)malloc(sizeof(double *) * x);
+	for(int i = 0; i < x; ++i)
+		c[i] = (double *)malloc(sizeof(double) * z);
 
-	for(int i = 0; i < dimension[0]; ++i){
-		for(int j = 0; j < dimension[2]; ++j){
+	for(int i = 0; i < x; ++i){
+		for(int j = 0; j < z; ++j){
 			c[i][j] = 0;
-			for(int k = 0; k < dimension[1]; ++k){
+			for(int k = 0; k < y; ++k){
 				c[i][j] = c[i][j] + a[i][k] * b[k][j];	
 			}
 		}
 	}	
 	return c;
+}
+
+double **Multiply(double **a, double rational, int row, int column)
+{
+	for(int i = 0; i < row; ++i)
+		for(int j = 0; j < column; ++j)
+			a[i][j] *= rational; 
+	return a;
 }
 
 double **M_Add(double **a, double **b, int row, int column)
@@ -27,6 +35,26 @@ double **M_Add(double **a, double **b, int row, int column)
 		}
 	}	
 	return a;
+}
+
+double **Add(double **a, double rational, int row, int column)
+{
+	for(int i = 0; i < row; ++i)
+		for(int j = 0; j < column; ++j)
+			a[i][j] += rational;
+	return a;
+}
+
+double **M_Transpose(double **a, int row, int column)
+{
+	double **transpose = (double **)malloc(sizeof(double *) * column);
+	for(int i = 0; i < column; ++i){
+		transpose[i] = (double *)malloc(sizeof(double) * row);
+		for(int j = 0; j < row; ++j){
+			transpose[i][j] = a[j][i];
+		}
+	}
+	return transpose;
 }
 
 void PrintMatrix(double **matrix, int row, int column)

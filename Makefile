@@ -1,13 +1,15 @@
+EXEC = annmodel
+all: $(EXEC)
+
 cc ?= gcc
 CFLAGS = -O0 -Wall -std=c99
-LDFLAGS= -lm 
+LDFLAGS = -lm 
+PROF_FLAGS = -pg
 
-EXEC = model
-
-all: $(EXEC)
+CFLAGS += $(PROF_FLAGS)
 
 $(EXEC): ./src/matrix.c ./src/neuralnet.c ./src/xmlparser.c ./src/dataprocessing.c main.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	$(RM) $(EXEC)
+	$(RM) $(EXEC) gmon.out
