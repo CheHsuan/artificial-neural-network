@@ -1,12 +1,16 @@
 #include "dataprocessing.h"
 
+typedef struct WEIGHTS{
+	double **i2hWeights;
+	double **h2oWeights;
+}WEIGHTS;
+
 int Training();
-double **FeedForwarding(const ENTITY *,const NET_DEFINE *,double **,double **, double **, double **);
-void AssignDimension(int *, int, int, int);
+double **FeedForwarding(const ENTITY *);
 double **Relu(double **, int);
 double **Sigmoid(double **, int);
 double **Softmax(double **, int);
-int BackPropagation(double **, double **, double **, double **, double **,const ENTITY *,const NET_DEFINE *);
-int EvaluateAccuracy(ENTITY *,const NET_DEFINE *,double **,double **, double **, double **);
-int Validation(const ENTITY *,const NET_DEFINE *,double **,double **, double **, double **, double *);
+int BackPropagation(double **, double **, double **, const ENTITY*);
+int EvaluateAccuracy(ENTITY *);
+int Validation(const ENTITY *, double *);
 double MeanSquareError(const ENTITY *, double **, int);

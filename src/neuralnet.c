@@ -55,10 +55,10 @@ int Training()
 	PrintMatrix(h2oWeights,netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);	
 	for(i = 0; i < netDefinition.epoch; ++i){
 		if((i % netDefinition.validationCycle) == 0)	
-			EvaluateAccuracy(validationSet, &netDefinition, i2hWeights, h2oWeights, i2hBias, h2oBias);
+			EvaluateAccuracy(validationSet);
 		entityPtr = trainingSet;
 		while(entityPtr != NULL){
-			FeedForwarding(entityPtr, &netDefinition, i2hWeights, h2oWeights, i2hBias, h2oBias);
+			FeedForwarding(entityPtr);
 			entityPtr = entityPtr->pNext;
 		}
 	}
@@ -69,7 +69,7 @@ int Training()
 	return 0;
 }
 
-double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **i2oBias, double **h2oBias)
+double **FeedForwarding(const ENTITY *entity)
 {
 	double **inputLayer;
 	double **hiddenLayer;
@@ -79,27 +79,27 @@ double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i
 	//malloc and assign the initial value	
 	inputLayer = (double**)malloc(sizeof(double*)*1);
 	for(int i = 0; i < 1; ++i){
-		inputLayer[i] = (double*)malloc(sizeof(double)*netDef->inputLayerNeuronNum);
-	 	for(int j = 0; j < netDef->inputLayerNeuronNum; ++j)
+		inputLayer[i] = (double*)malloc(sizeof(double)*netDefinition.inputLayerNeuronNum);
+	 	for(int j = 0; j < netDefinition.inputLayerNeuronNum; ++j)
 			inputLayer[i][j] = *((entity->attributes)+j);
 	}
 
 	//asssign the function pointer
-	if(strcmp(netDef->activationFunction, "Sigmoid") == 0)
+	if(strcmp(netDefinition.activationFunction, "Sigmoid") == 0)
 		activation = Sigmoid;
 	else
 		activation = Relu;
 
 	//matrix operation (i 2 h)
-	hiddenLayer = M_Multiply(inputLayer, i2hWeights, 1, netDef->inputLayerNeuronNum, netDef->hiddenLayerNeuronNum);
-	hiddenLayer = M_Add(hiddenLayer, i2hBias, 1, netDef->hiddenLayerNeuronNum);
-	hiddenLayer = activation(hiddenLayer, netDef->hiddenLayerNeuronNum);
+	hiddenLayer = M_Multiply(inputLayer, i2hWeights, 1, netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
+	hiddenLayer = M_Add(hiddenLayer, i2hBias, 1, netDefinition.hiddenLayerNeuronNum);
+	hiddenLayer = activation(hiddenLayer, netDefinition.hiddenLayerNeuronNum);
 	//matrix operation (h 2 o)
-	outputLayer = M_Multiply(hiddenLayer, h2oWeights, 1, netDef->hiddenLayerNeuronNum, netDef->outputLayerNeuronNum);
-	outputLayer = M_Add(outputLayer, h2oBias, 1, netDef->outputLayerNeuronNum);
-	outputLayer = activation(outputLayer, netDef->outputLayerNeuronNum);
+	outputLayer = M_Multiply(hiddenLayer, h2oWeights, 1, netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);
+	outputLayer = M_Add(outputLayer, h2oBias, 1, netDefinition.outputLayerNeuronNum);
+	outputLayer = activation(outputLayer, netDefinition.outputLayerNeuronNum);
 	
-	BackPropagation(outputLayer, hiddenLayer, inputLayer, i2hWeights, h2oWeights, entity, netDef);
+	BackPropagation(outputLayer, hiddenLayer, inputLayer, entity);
 
 	Free2DMemory(inputLayer,1);
 	Free2DMemory(hiddenLayer,1);
@@ -108,49 +108,49 @@ double **FeedForwarding(const ENTITY *entity,const NET_DEFINE *netDef,double **i
 	return NULL;		
 }
 
-int BackPropagation(double **output, double **hidden, double **input, double **i2hWeights, double **h2oWeights, const ENTITY *entity,const NET_DEFINE *netDef)
+int BackPropagation(double **output, double **hidden, double **input, const ENTITY *entity)
 {
 	double **errorO = (double **)malloc(sizeof(double *));	
-	errorO[0] = (double *)malloc(sizeof(double) * netDef->outputLayerNeuronNum);
+	errorO[0] = (double *)malloc(sizeof(double) * netDefinition.outputLayerNeuronNum);
 	double **errorH = (double **)malloc(sizeof(double *));
-	errorH[0] = (double *)malloc(sizeof(double) * netDef->hiddenLayerNeuronNum);
+	errorH[0] = (double *)malloc(sizeof(double) * netDefinition.hiddenLayerNeuronNum);
 	double **i2hUpdate = NULL;	
 	double **h2oUpdate = NULL;
 	double **transpose;
 	
 	//calculate error between output layer and hidden layer
-	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){
+	for(int i = 0; i < netDefinition.outputLayerNeuronNum; ++i){
 		errorO[0][i] = output[0][i] * (1 - output[0][i]) * ((entity->catagory)[i]-output[0][i]);
 	}
 	
-	transpose = M_Transpose(hidden, 1, netDef->hiddenLayerNeuronNum);
-	h2oUpdate = M_Multiply(transpose, errorO, netDef->hiddenLayerNeuronNum, 1, netDef->outputLayerNeuronNum);
-	h2oUpdate = Multiply(h2oUpdate, netDef->learningRate, netDef->hiddenLayerNeuronNum, netDef->outputLayerNeuronNum);
-	h2oWeights = M_Add(h2oWeights, h2oUpdate, netDef->hiddenLayerNeuronNum, netDef->outputLayerNeuronNum);
-	Free2DMemory(transpose, netDef->hiddenLayerNeuronNum);
+	transpose = M_Transpose(hidden, 1, netDefinition.hiddenLayerNeuronNum);
+	h2oUpdate = M_Multiply(transpose, errorO, netDefinition.hiddenLayerNeuronNum, 1, netDefinition.outputLayerNeuronNum);
+	h2oUpdate = Multiply(h2oUpdate, netDefinition.learningRate, netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);
+	h2oWeights = M_Add(h2oWeights, h2oUpdate, netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);
+	Free2DMemory(transpose, netDefinition.hiddenLayerNeuronNum);
 	
 	//calculate error between hidden layer and output layer
-	for(int i = 0; i < netDef->hiddenLayerNeuronNum; ++i){
+	for(int i = 0; i < netDefinition.hiddenLayerNeuronNum; ++i){
 		errorH[0][i] = 0;
-		for(int j = 0; j < netDef->outputLayerNeuronNum; ++j){
+		for(int j = 0; j < netDefinition.outputLayerNeuronNum; ++j){
 			errorH[0][i] += (h2oWeights[i][j] * errorO[0][j]);
 		}
 		errorH[0][i] = errorH[0][i] * (hidden[0][i] * (1 - hidden[0][i]));
 	}	
-	transpose = M_Transpose(input, 1, netDef->inputLayerNeuronNum);
-	i2hUpdate = M_Multiply(transpose, errorH, netDef->inputLayerNeuronNum, 1, netDef->hiddenLayerNeuronNum);
-	i2hUpdate = Multiply(i2hUpdate, netDef->learningRate, netDef->inputLayerNeuronNum, netDef->hiddenLayerNeuronNum);
-	i2hWeights = M_Add(i2hWeights, i2hUpdate, netDef->inputLayerNeuronNum, netDef->hiddenLayerNeuronNum);
-	Free2DMemory(transpose, netDef->inputLayerNeuronNum);
+	transpose = M_Transpose(input, 1, netDefinition.inputLayerNeuronNum);
+	i2hUpdate = M_Multiply(transpose, errorH, netDefinition.inputLayerNeuronNum, 1, netDefinition.hiddenLayerNeuronNum);
+	i2hUpdate = Multiply(i2hUpdate, netDefinition.learningRate, netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
+	i2hWeights = M_Add(i2hWeights, i2hUpdate, netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
+	Free2DMemory(transpose, netDefinition.inputLayerNeuronNum);
 	
 	free(errorO);
 	free(errorH);
-	Free2DMemory(i2hUpdate, netDef->inputLayerNeuronNum);
-	Free2DMemory(h2oUpdate, netDef->hiddenLayerNeuronNum);
+	Free2DMemory(i2hUpdate, netDefinition.inputLayerNeuronNum);
+	Free2DMemory(h2oUpdate, netDefinition.hiddenLayerNeuronNum);
 	return 0;
 }
 
-int EvaluateAccuracy(ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **i2hBias, double **h2oBias)
+int EvaluateAccuracy(ENTITY *entity)
 {
 	int total = 0;
 	int count = 0;
@@ -163,18 +163,18 @@ int EvaluateAccuracy(ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights
 	p = localtime(&timep); 
 	printf("[%d] %d:%d:%d\t", cycle, p->tm_hour, p->tm_min, p->tm_sec);
 	while(entityPtr != NULL){
-		if(Validation(entityPtr, netDef, i2hWeights, h2oWeights, i2hBias, h2oBias, &meanSquareError) == 1)
+		if(Validation(entityPtr, &meanSquareError) == 1)
 			++count;
 		entityPtr = entityPtr->pNext;
 		++total;
 	}
 	printf("Accuracy : %0.2f\t",((count*100)/total) * 0.01);
 	printf("Loss : %lf\n", meanSquareError);
-	cycle += netDef->validationCycle;
+	cycle += netDefinition.validationCycle;
 	return 0;
 } 
 
-int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights,double **h2oWeights, double **i2hBias, double **h2oBias, double *meanSquareError)
+int Validation(const ENTITY *entity, double *meanSquareError)
 {
 	double **inputLayer;
 	double **hiddenLayer;
@@ -184,34 +184,34 @@ int Validation(const ENTITY *entity,const NET_DEFINE *netDef,double **i2hWeights
 	//malloc and assign the initial value	
 	inputLayer = (double**)malloc(sizeof(double*)*1);
 	for(int i = 0; i < 1; ++i){
-		inputLayer[i] = (double*)malloc(sizeof(double)*netDef->inputLayerNeuronNum);
-		for(int j = 0; j < netDef->inputLayerNeuronNum; ++j){
+		inputLayer[i] = (double*)malloc(sizeof(double)*netDefinition.inputLayerNeuronNum);
+		for(int j = 0; j < netDefinition.inputLayerNeuronNum; ++j){
 			inputLayer[i][j] = (entity->attributes)[j];
 		}
 	}
 
 	//asssign the function pointer
-	if(strcmp(netDef->activationFunction, "Sigmoid") == 0)
+	if(strcmp(netDefinition.activationFunction, "Sigmoid") == 0)
 		activation = Sigmoid;
 	else
 		activation = Relu;
 
 	//matrix operation
-	hiddenLayer = M_Multiply(inputLayer, i2hWeights, 1, netDef->inputLayerNeuronNum, netDef->hiddenLayerNeuronNum);
-	hiddenLayer = M_Add(hiddenLayer, i2hBias, 1, netDef->hiddenLayerNeuronNum);
-	hiddenLayer = activation(hiddenLayer, netDef->hiddenLayerNeuronNum);
-	outputLayer = M_Multiply(hiddenLayer, h2oWeights, 1, netDef->hiddenLayerNeuronNum, netDef->outputLayerNeuronNum);
-	outputLayer = M_Add(outputLayer, h2oBias, 1, netDef->outputLayerNeuronNum);
-	outputLayer = activation(outputLayer, netDef->outputLayerNeuronNum);
+	hiddenLayer = M_Multiply(inputLayer, i2hWeights, 1, netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
+	hiddenLayer = M_Add(hiddenLayer, i2hBias, 1, netDefinition.hiddenLayerNeuronNum);
+	hiddenLayer = activation(hiddenLayer, netDefinition.hiddenLayerNeuronNum);
+	outputLayer = M_Multiply(hiddenLayer, h2oWeights, 1, netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);
+	outputLayer = M_Add(outputLayer, h2oBias, 1, netDefinition.outputLayerNeuronNum);
+	outputLayer = activation(outputLayer, netDefinition.outputLayerNeuronNum);
 	
 	//calculate mean square error
-	*meanSquareError = MeanSquareError(entity, outputLayer, netDef->outputLayerNeuronNum);
+	*meanSquareError = MeanSquareError(entity, outputLayer, netDefinition.outputLayerNeuronNum);
 
 	//softmax
-	outputLayer = Softmax(outputLayer, netDef->outputLayerNeuronNum);
+	outputLayer = Softmax(outputLayer, netDefinition.outputLayerNeuronNum);
 	
 	int maxIndex = 0;
-	for(int i = 0; i < netDef->outputLayerNeuronNum; ++i){	
+	for(int i = 0; i < netDefinition.outputLayerNeuronNum; ++i){	
 		if(outputLayer[0][i] > outputLayer[0][maxIndex])
 			maxIndex = i;
 	}
