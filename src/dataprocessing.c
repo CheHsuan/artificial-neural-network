@@ -2,13 +2,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <sys/sysinfo.h>
 #include "xmlparser.h"
 #include "dataprocessing.h"
+
+#define SYS_CORE get_nprocs()
 
 NET_DEFINE netDefinition;
 ENTITY *trainingSet = NULL;
 ENTITY *validationSet = NULL;
 ENTITY *testingSet = NULL;
+ENTITY **dividedListPtr;
 extern double **i2hWeights;
 extern double **h2oWeights;
 extern double **i2hBias;
@@ -87,9 +91,12 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 
 int LoadTrainingSet(char *srcFile)
 {
+	printf("CPU cores : %d\n", SYS_CORE);
+	int dataSetSize = 0;
 	printf("Load the training data set......\n");
-	if((trainingSet = ReadDataSet(trainingSet, &netDefinition, srcFile)) != NULL){
+	if((trainingSet = ReadDataSet(trainingSet, &netDefinition, srcFile, &dataSetSize)) != NULL){
 		printf("Done!\n");
+		dividedListPtr = DivideDataSet(trainingSet,dataSetSize);
 		return 0;
 	}
 	printf("Error in reading the file (%s)!\n",srcFile);
@@ -98,8 +105,9 @@ int LoadTrainingSet(char *srcFile)
 
 int LoadValidationSet(char *srcFile)
 {
+	int dataSetSize = 0;
 	printf("Load the validation data set......\n");
-	if((validationSet = ReadDataSet(validationSet, &netDefinition, srcFile)) != NULL){
+	if((validationSet = ReadDataSet(validationSet, &netDefinition, srcFile, &dataSetSize)) != NULL){
 		printf("Done!\n");
 		return 0;
 	}
@@ -109,8 +117,9 @@ int LoadValidationSet(char *srcFile)
 
 int LoadTestingSet(char *srcFile)
 {
+	int dataSetSize = 0;
 	printf("Load the testing data set......\n");
-	if((testingSet = ReadDataSet(testingSet, &netDefinition, srcFile)) != NULL){
+	if((testingSet = ReadDataSet(testingSet, &netDefinition, srcFile, &dataSetSize)) != NULL){
 		printf("Done!\n");
 		return 0;
 	}
@@ -118,10 +127,11 @@ int LoadTestingSet(char *srcFile)
 	exit(0);
 }
 
-ENTITY *ReadDataSet(ENTITY *dataSet,const NET_DEFINE *netDef, char *srcFile)
+ENTITY *ReadDataSet(ENTITY *dataSet,const NET_DEFINE *netDef, char *srcFile , int *dataSetSize)
 {
 	FILE *fp = NULL;
-	char buffer[200];
+	char buffer[10000];
+	int count = 0;
 	
 	ENTITY *entityListTail = (ENTITY *)malloc(sizeof(ENTITY));
 	dataSet = entityListTail;
@@ -135,7 +145,9 @@ ENTITY *ReadDataSet(ENTITY *dataSet,const NET_DEFINE *netDef, char *srcFile)
 	//read the file and parse it
 	while(fgets(buffer, sizeof(buffer), fp) != NULL){
 		entityListTail = Add2List(buffer, netDef, entityListTail);
+		count++;
 	}
+	*dataSetSize = count;
 	entityListTail = dataSet;
 	dataSet	= dataSet->pNext;
 	//free unused memory
@@ -158,9 +170,9 @@ ENTITY *Add2List(char *buffer, const NET_DEFINE *netDef, ENTITY *entityListTail)
 	token = strtok(buffer, " ,\t");
 	for(i = 0; i < netDef->outputLayerNeuronNum; ++i){
 		if( i == atoi(token))
-			*((entity->catagory)+i) = 1;
+			entity->catagory[i] = 1;
 		else
-			*((entity->catagory)+i) = 0;
+			entity->catagory[i] = 0;
 	}
 	i = 0;
 	/*TODO modify the expression*/
@@ -171,6 +183,7 @@ ENTITY *Add2List(char *buffer, const NET_DEFINE *netDef, ENTITY *entityListTail)
 		printf("The dataset format is incompatible to network definition.\n");
 		assert(i == netDef->inputLayerNeuronNum);
 		free(entity->attributes);
+		free(entity->catagory);
 		free(entity);
 		return NULL;
 	}
@@ -180,6 +193,31 @@ ENTITY *Add2List(char *buffer, const NET_DEFINE *netDef, ENTITY *entityListTail)
 	entityListTail = entity;
 
 	return entityListTail;	
+}
+
+ENTITY **DivideDataSet(ENTITY *head, int entityCount)
+{
+	int subsetSize;
+	int count = 0;
+	int num = 0;
+	ENTITY **dataPtr;
+	ENTITY *entity = head;
+	
+	subsetSize = entityCount / SYS_CORE;
+	dataPtr = (ENTITY **)malloc(sizeof(ENTITY *) * (SYS_CORE + 1));
+	dataPtr[count++] = entity;
+	while(entity != NULL){
+		if(num == subsetSize){
+			dataPtr[count++] = entity;
+			num = 0;
+		}
+		else{
+			num += 1;
+		}
+		entity = entity->pNext;
+	}
+		
+	return dataPtr;	
 }
 
 void Free2DMemory(double **matrix, int row)

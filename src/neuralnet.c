@@ -32,13 +32,13 @@ int Training()
 	for(i = 0; i < netDefinition.inputLayerNeuronNum; ++i){
 		i2hWeights[i] = (double*)malloc(sizeof(double)*netDefinition.hiddenLayerNeuronNum);
 		for(j = 0; j < netDefinition.hiddenLayerNeuronNum; ++j)
-			i2hWeights[i][j] = ((rand() % 5) + 1) * base;
+			i2hWeights[i][j] = ((rand() % 10) - 5) * base;
 	}
 	h2oWeights = (double**)malloc(sizeof(double*)*netDefinition.hiddenLayerNeuronNum);
 	for(i = 0; i < netDefinition.hiddenLayerNeuronNum; ++i){
 		h2oWeights[i] = (double*)malloc(sizeof(double)*netDefinition.outputLayerNeuronNum);
 		for(j = 0; j < netDefinition.outputLayerNeuronNum; ++j)
-			h2oWeights[i][j] = ((rand() % 5) + 1) * base;
+			h2oWeights[i][j] = ((rand() % 10) - 5) * base;
 	}
 	//memory allocation for bias
 	i2hBias = (double**)malloc(sizeof(double*));
@@ -50,9 +50,6 @@ int Training()
 		for(j = 0; j < netDefinition.outputLayerNeuronNum; ++j)
 			h2oBias[0][j] = 1;
 	
-	//weigths
-	PrintMatrix(i2hWeights,netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
-	PrintMatrix(h2oWeights,netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);	
 	for(i = 0; i < netDefinition.epoch; ++i){
 		if((i % netDefinition.validationCycle) == 0)	
 			EvaluateAccuracy(validationSet);
@@ -62,10 +59,6 @@ int Training()
 			entityPtr = entityPtr->pNext;
 		}
 	}
-	//weigths
-	PrintMatrix(i2hWeights,netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
-	PrintMatrix(h2oWeights,netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);	
-
 	return 0;
 }
 
