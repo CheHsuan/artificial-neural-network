@@ -10,10 +10,6 @@ ENTITY *trainingSet = NULL;
 ENTITY *validationSet = NULL;
 ENTITY *testingSet = NULL;
 ENTITY **dividedListPtr;
-extern double **i2hWeights;
-extern double **h2oWeights;
-extern double **i2hBias;
-extern double **h2oBias;
 
 int LoadNetDefinition(char *srcFile)
 {
@@ -200,7 +196,7 @@ ENTITY **DivideDataSet(ENTITY *head, int entityCount)
 	ENTITY **dataPtr;
 	ENTITY *entity = head;
 	
-	subsetSize = entityCount / SYS_CORE;
+	subsetSize = (entityCount / SYS_CORE) + 1;
 	dataPtr = (ENTITY **)malloc(sizeof(ENTITY *) * (SYS_CORE + 1));
 	dataPtr[count++] = entity;
 	while(entity != NULL){
@@ -217,14 +213,6 @@ ENTITY **DivideDataSet(ENTITY *head, int entityCount)
 	return dataPtr;	
 }
 
-void Free2DMemory(double **matrix, int row)
-{
-	for(int i = 0; i < row; ++i){
-		free(matrix[i]);		
-	}	
-	free(matrix);
-}
-
 void FreeDataList(ENTITY *ptr)
 {
 	ENTITY *tmp;
@@ -237,14 +225,8 @@ void FreeDataList(ENTITY *ptr)
 	}
 }
 
-void FreeMemory()
+void FreeDataMemory()
 {
-	//free weights and bias
-	Free2DMemory(i2hWeights, netDefinition.inputLayerNeuronNum);
-	Free2DMemory(h2oWeights, netDefinition.hiddenLayerNeuronNum);
-	Free2DMemory(i2hBias, 1);
-	Free2DMemory(h2oBias, 1);
-	
 	//free training data set, validation data set and testing data set
 	FreeDataList(trainingSet);
 	FreeDataList(validationSet);

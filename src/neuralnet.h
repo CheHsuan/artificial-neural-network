@@ -5,12 +5,19 @@ typedef struct WEIGHTS{
 	double **h2oWeights;
 }WEIGHTS;
 
+typedef struct THREADARG{
+	ENTITY *entity;
+	WEIGHTS *update;
+}THREADARG;
+
 int Training();
-double **FeedForwarding(const ENTITY *);
+void ParameterServer(WEIGHTS *);
+void FeedForwarding(void *);
 double **Relu(double **, int);
 double **Sigmoid(double **, int);
 double **Softmax(double **, int);
-int BackPropagation(double **, double **, double **, const ENTITY*);
+void BackPropagation(double **, double **, double **, const ENTITY*, WEIGHTS *);
 int EvaluateAccuracy(ENTITY *);
 int Validation(const ENTITY *, double *);
 double MeanSquareError(const ENTITY *, double **, int);
+void FreeMemory();

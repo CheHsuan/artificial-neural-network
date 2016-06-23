@@ -27,6 +27,5 @@ int LoadTestingSet(char *);
 ENTITY *ReadDataSet(ENTITY *, const NET_DEFINE *, char *, int *);
 ENTITY *Add2List(char *, const NET_DEFINE *, ENTITY *);
 ENTITY ** DivideDataSet(ENTITY *, int);
-void Free2DMemory(double **, int);
 void FreeDataList(ENTITY *);
-void FreeMemory();
+void FreeDataMemory();
