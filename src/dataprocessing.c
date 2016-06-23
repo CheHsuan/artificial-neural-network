@@ -2,11 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <sys/sysinfo.h>
 #include "xmlparser.h"
 #include "dataprocessing.h"
-
-#define SYS_CORE get_nprocs()
 
 NET_DEFINE netDefinition;
 ENTITY *trainingSet = NULL;

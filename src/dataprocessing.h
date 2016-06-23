@@ -1,3 +1,7 @@
+#include <sys/sysinfo.h>
+
+#define SYS_CORE get_nprocs() 
+
 typedef struct NET_DEFINE{
 	double learningRate;
 	int epoch;

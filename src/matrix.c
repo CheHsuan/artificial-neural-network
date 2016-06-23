@@ -2,12 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-double **M_Multiply(double **a, double **b, int x, int y, int z)
+double **M_Multiply(double **a, double **b, double **c, int x, int y, int z)
 {
-	double **c = (double **)malloc(sizeof(double *) * x);
-	for(int i = 0; i < x; ++i)
-		c[i] = (double *)malloc(sizeof(double) * z);
-
 	for(int i = 0; i < x; ++i){
 		for(int j = 0; j < z; ++j){
 			c[i][j] = 0;
@@ -45,16 +41,14 @@ double **Add(double **a, double rational, int row, int column)
 	return a;
 }
 
-double **M_Transpose(double **a, int row, int column)
+double **M_Transpose(double **a, double **b, int row, int column)
 {
-	double **transpose = (double **)malloc(sizeof(double *) * column);
 	for(int i = 0; i < column; ++i){
-		transpose[i] = (double *)malloc(sizeof(double) * row);
 		for(int j = 0; j < row; ++j){
-			transpose[i][j] = a[j][i];
+			b[i][j] = a[j][i];
 		}
 	}
-	return transpose;
+	return b;
 }
 
 void PrintMatrix(double **matrix, int row, int column)
