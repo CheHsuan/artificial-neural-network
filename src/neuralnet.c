@@ -8,6 +8,7 @@
 #include "xmlparser.h"
 #include "matrix.h"
 #include "neuralnet.h"
+#include "threadpool.h"
 
 extern NET_DEFINE netDefinition;
 extern ENTITY *trainingSet;
@@ -79,10 +80,11 @@ int Training()
 				updateWeights[i].h2oWeights[row][column] = 0;
 		}
 	}
-	pthread_t *threads;
-	threads = (pthread_t *)malloc(sizeof(pthread_t) * SYS_CORE);
 	THREADARG arg;
 	int threadcount;
+	threadpool_t *pool = (threadpool_t *)malloc(sizeof(threadpool_t));
+	if(-1 == (threadpool_init(pool, SYS_CORE, 10)))
+		printf("thread init error\n");
 	for(int i = 0; i < netDefinition.epoch; ++i){
 		if((i % netDefinition.validationCycle) == 0)	
 			EvaluateAccuracy(validationSet);
@@ -92,13 +94,12 @@ int Training()
 				if(entityPtr != NULL){
 					arg.entity = entityPtr;
 					arg.update = updateWeights+threadcount;
-					pthread_create(&threads[threadcount], NULL, (void *)FeedForwarding,(void *)&arg);	
+					threadpool_addQueue(pool, FeedForwarding, (void *)&arg);
 				}
 				else 
 					break;
 			}
-			for(int j = 0; j < threadcount; ++j)
-				pthread_join(threads[j],NULL);
+			threadpool_sync(pool);
 			ParameterServer(updateWeights);
 		}
 	}

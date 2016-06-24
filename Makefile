@@ -8,7 +8,7 @@ PROF_FLAGS = -pg
 
 CFLAGS += $(PROF_FLAGS)
 
-$(EXEC): ./src/neuralnet.c ./src/xmlparser.c ./src/dataprocessing.c main.c
+$(EXEC): ./src/neuralnet.c ./src/xmlparser.c ./src/threadpool.c ./src/dataprocessing.c main.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
