@@ -31,6 +31,7 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 	char inputLayerNeuronNum[5];
  	char hiddenLayerNeuronNum[5];
      	char outputLayerNeuronNum[5];
+	char batchSize[4];
 	char cycle[5];
 	
 	//parse the network definition file	
@@ -56,6 +57,11 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 		printf("The xml file doesn't contain the <OutputLayerNeuronNum> or </OutputLayerNeuronNum> label.");
 		return -1;
 	}
+	if(InnerText(batchSize, xml, "<BatchSize>", "</BatchSize>") == NULL){
+		printf("The xml file doesn't contain the <BatchSize> or </BatchSize> label.");
+		return -1;
+	}
+
 	netDefinition->activationFunction = (char *)malloc(sizeof(char)*20);
 	if(InnerText(netDefinition->activationFunction, xml, "<ActivationFunction>", "</ActivationFunction>") == NULL){
 		printf("The xml file doesn't contain the <ActivationFunction> or </ActivationFunction> label.");
@@ -77,6 +83,7 @@ int ReadNetDefinition(NET_DEFINE *netDefinition, char *srcFile)
 	netDefinition->inputLayerNeuronNum = atoi(inputLayerNeuronNum);
 	netDefinition->hiddenLayerNeuronNum = atoi(hiddenLayerNeuronNum);
 	netDefinition->outputLayerNeuronNum = atoi(outputLayerNeuronNum);
+	netDefinition->batchSize = atoi(batchSize);
 	netDefinition->validationCycle = atoi(cycle);
 	
 	return 0; 

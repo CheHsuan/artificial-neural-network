@@ -6,6 +6,7 @@
 	<InputLayerNeuronNum>4</InputLayerNeuronNum>
 	<HiddenLayerNeuronNum>5</HiddenLayerNeuronNum>
 	<OutputLayerNeuronNum>3</OutputLayerNeuronNum>
+	<BatchSize>10</BatchSize>
 	<ActivationFunction>Sigmoid</ActivationFunction>
 </NetDefine>
 <TrainDefine>

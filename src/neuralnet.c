@@ -44,7 +44,7 @@ int Training()
 {
 	double base = 0.1;
 	ENTITY *entityPtr = NULL;
-	WEIGHTS *updateWeights = (WEIGHTS *)malloc(sizeof(WEIGHTS) * SYS_CORE);
+	WEIGHTS *updateWeights = (WEIGHTS *)malloc(sizeof(WEIGHTS) * netDefinition.batchSize);
 	srand(time(NULL));
 
 	if(strcmp(netDefinition.weightAssignment, "Zero") == 0)
@@ -68,7 +68,7 @@ int Training()
 	for(int j = 0; j < netDefinition.outputLayerNeuronNum; ++j)
 		h2oBias[0][j] = 1;
 	//memory allocation and initialization for weight increments
-	for(int i = 0; i < SYS_CORE; ++i){
+	for(int i = 0; i < netDefinition.batchSize; ++i){
 		updateWeights[i].i2hWeights = Allocate2DMemory(netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);
 		updateWeights[i].h2oWeights = Allocate2DMemory(netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);
 		for(int row = 0; row < netDefinition.inputLayerNeuronNum; ++row){
@@ -80,17 +80,17 @@ int Training()
 				updateWeights[i].h2oWeights[row][column] = 0;
 		}
 	}
+
 	THREADARG arg;
-	int threadcount;
 	threadpool_t *pool = (threadpool_t *)malloc(sizeof(threadpool_t));
-	if(-1 == (threadpool_init(pool, SYS_CORE, 10)))
+	if(-1 == (threadpool_init(pool, SYS_CORE, netDefinition.batchSize+1)))
 		printf("thread init error\n");
 	for(int i = 0; i < netDefinition.epoch; ++i){
 		if((i % netDefinition.validationCycle) == 0)	
 			EvaluateAccuracy(validationSet);
 		entityPtr = trainingSet;
 		while(entityPtr != NULL){
-			for(threadcount = -1; threadcount++ < SYS_CORE-1;entityPtr = entityPtr->pNext){
+			for(int threadcount = -1; threadcount++ < netDefinition.batchSize-1; entityPtr = entityPtr->pNext){
 				if(entityPtr != NULL){
 					arg.entity = entityPtr;
 					arg.update = updateWeights+threadcount;
@@ -103,21 +103,23 @@ int Training()
 			ParameterServer(updateWeights);
 		}
 	}
-
+	
 	//free updates
-	for(int i = 0; i < SYS_CORE; ++i){
+	for(int i = 0; i < netDefinition.batchSize; ++i){
 		Free2DMemory(updateWeights[i].i2hWeights, netDefinition.inputLayerNeuronNum);
 		Free2DMemory(updateWeights[i].h2oWeights, netDefinition.hiddenLayerNeuronNum);
 	}
 	free(updateWeights);
 
-
+	//free thread pool
+	threadpool_destroy(pool);
+	threadpool_freeMem(pool);
 	return 0;
 }
 
 void ParameterServer(WEIGHTS *updates)
 {
-	for(int i = 0; i < SYS_CORE; ++i){
+	for(int i = 0; i < netDefinition.batchSize; ++i){
 		i2hWeights = M_Add(i2hWeights, updates[i].i2hWeights, netDefinition.inputLayerNeuronNum, netDefinition.hiddenLayerNeuronNum);	
 		h2oWeights = M_Add(h2oWeights, updates[i].h2oWeights, netDefinition.hiddenLayerNeuronNum, netDefinition.outputLayerNeuronNum);
 		for(int row = 0; row < netDefinition.inputLayerNeuronNum; ++row){
@@ -131,9 +133,9 @@ void ParameterServer(WEIGHTS *updates)
 	}
 }
 
-void FeedForwarding(void *threadArg)
+void FeedForwarding(void *v_arg)
 {
-	THREADARG *arg = (THREADARG *)threadArg;
+	THREADARG *arg = (THREADARG *)v_arg;
 	ENTITY *entity = arg->entity;
 	WEIGHTS *update = arg->update;
 	double **inputLayer;
